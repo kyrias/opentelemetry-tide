@@ -104,9 +104,14 @@ impl<State: Clone + Send + Sync + 'static> Middleware<State> for OpenTelemetryTr
             attributes.push(trace::HTTP_CLIENT_IP.string(ipaddr.to_string()));
         }
 
+        let span_name = if let Some(route) = req.route() {
+            format!("{method} {route}")
+        } else {
+            format!("HTTP {method}")
+        };
         let span_builder = self
             .tracer
-            .span_builder(format!("{} {}", method, url))
+            .span_builder(span_name)
             .with_kind(SpanKind::Server)
             .with_attributes(attributes);
         let mut span = if parent_cx.span().span_context().is_remote() {
